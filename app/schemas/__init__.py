@@ -24,6 +24,7 @@ from app.schemas.mesure import (
     MesureRead,
     MesureUpdate,
 )
+from app.schemas.paiement import PaiementCreate, PaiementRead
 from app.schemas.type_vetement import (
     TypeVetementBase,
     TypeVetementCreate,
@@ -57,6 +58,8 @@ __all__ = [
     "MesureCreate",
     "MesureRead",
     "MesureUpdate",
+    "PaiementCreate",
+    "PaiementRead",
     "Token",
     "TokenPayload",
     "TypeVetementBase",

@@ -1,5 +1,5 @@
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies.auth import get_current_user, require_accueil
 from app.models.commande import Commande, StatutCommande
+from app.models.paiement import Paiement
 from app.models.utilisateur import Utilisateur
 from app.schemas.commande import (
     ChangementStatutRequest,
@@ -17,6 +18,7 @@ from app.schemas.commande import (
     HistoriqueStatutRead,
     LigneCommandeCreate,
 )
+from app.schemas.paiement import PaiementCreate, PaiementRead
 from app.services.commande import (
     add_ligne_commande,
     changer_statut_commande,
@@ -27,6 +29,10 @@ from app.services.commande import (
     get_commande_by_id,
     list_commandes,
     update_commande,
+)
+from app.services.paiement import (
+    create_paiement,
+    list_paiements_commande,
 )
 
 router = APIRouter(
@@ -238,3 +244,42 @@ def remove_line(
         )
     cmd_updated = delete_ligne_commande(db=db, commande=cmd, ligne_id=ligne_id)
     return format_commande_read(cmd_updated)
+
+
+# --- Routes des Paiements associées à la commande (Routes 32 & 33) ---
+
+@router.post(
+    "/{id}/paiements",
+    response_model=PaiementRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Encaisser un acompte ou le solde (Accueil)",
+    description="Enregistre un paiement sur la commande. Applique les contrôles RG16 (montant <= solde, pas de date future, commande non annulée).",
+    dependencies=[Depends(require_accueil)],
+)
+def pay_order(
+    id: int,
+    paiement_in: PaiementCreate,
+    current_user: Utilisateur = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Paiement:
+    """Encaissement d'un règlement sur la commande."""
+    return create_paiement(
+        db=db,
+        commande_id=id,
+        paiement_in=paiement_in,
+        current_user=current_user,
+    )
+
+
+@router.get(
+    "/{id}/paiements",
+    response_model=List[PaiementRead],
+    summary="Lister les paiements d'une commande (Tous rôles)",
+    description="Renvoie l'ensemble des paiements de la commande dans leur ordre chronologique de saisie (Route 33).",
+)
+def get_order_payments(
+    id: int,
+    db: Session = Depends(get_db),
+) -> Sequence[Paiement]:
+    """Historique des paiements d'une commande."""
+    return list_paiements_commande(db=db, commande_id=id)

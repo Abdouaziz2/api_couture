@@ -7,6 +7,7 @@ from app.models.commande import (
     TRANSITIONS_AUTORISEES,
 )
 from app.models.mesure import CHAMPS_MESURES, Mesure
+from app.models.paiement import ModePaiement, Paiement
 from app.models.type_vetement import TypeVetement
 from app.models.utilisateur import RoleUtilisateur, Utilisateur
 
@@ -18,6 +19,8 @@ __all__ = [
     "HistoriqueStatut",
     "LigneCommande",
     "Mesure",
+    "ModePaiement",
+    "Paiement",
     "RoleUtilisateur",
     "StatutCommande",
     "TRANSITIONS_AUTORISEES",
