@@ -18,3 +18,7 @@ __pycache__/
 # Couverture de tests
 .coverage
 htmlcov/
+
+# Documentation interne de suivi de développement (non publiée sur GitHub)
+doc.md
+JOURNAL_SUIVI.md
