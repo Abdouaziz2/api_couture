@@ -1,11 +1,12 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies.auth import get_current_user, require_admin
+from app.dependencies.auth import get_current_user, require_admin, require_tailleur
 from app.models.client import Client, GenreClient
+from app.models.mesure import Mesure
 from app.models.utilisateur import Utilisateur
 from app.schemas.client import (
     ClientCreate,
@@ -14,6 +15,7 @@ from app.schemas.client import (
     ClientResume,
     ClientUpdate,
 )
+from app.schemas.mesure import MesureCreate, MesureRead
 from app.services.client import (
     create_client,
     delete_client,
@@ -21,6 +23,11 @@ from app.services.client import (
     get_client_resume,
     list_clients,
     update_client,
+)
+from app.services.mesure import (
+    create_mesure,
+    get_derniere_mesure_client,
+    list_mesures_client,
 )
 
 router = APIRouter(
@@ -174,7 +181,6 @@ def get_client_commandes(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Aucun client trouvé avec l'identifiant {id}.",
         )
-    # Si le modèle Commande est présent
     try:
         from app.models.commande import Commande
         from sqlalchemy import select
@@ -194,3 +200,55 @@ def get_client_commandes(
         }
     except ImportError:
         return {"items": [], "total": 0, "limit": limit, "offset": offset}
+
+
+# --- Routes des Mesures liées à un client (Routes 18, 19, 20) ---
+
+@router.post(
+    "/{id}/mesures",
+    response_model=MesureRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Prendre des mesures pour un client (Tailleur)",
+    description="Enregistre une nouvelle prise de mesures. Rôle tailleur requis (RG2: au moins 1 mesure <= 300 cm).",
+)
+def take_client_measures(
+    id: int,
+    mesure_in: MesureCreate,
+    current_tailleur: Utilisateur = Depends(require_tailleur),
+    db: Session = Depends(get_db),
+) -> Mesure:
+    """Enregistre les mesures d'un client par le tailleur connecté."""
+    return create_mesure(
+        db=db,
+        client_id=id,
+        prise_par_id=current_tailleur.id,
+        mesure_in=mesure_in,
+    )
+
+
+@router.get(
+    "/{id}/mesures",
+    response_model=list[MesureRead],
+    summary="Historique complet des mesures d'un client (Tous rôles)",
+    description="Renvoie toutes les prises de mesures du client, la plus récente d'abord (RG3).",
+)
+def get_client_measures_history(
+    id: int,
+    db: Session = Depends(get_db),
+) -> Sequence[Mesure]:
+    """Historique chronologique inversé des mesures."""
+    return list_mesures_client(db=db, client_id=id)
+
+
+@router.get(
+    "/{id}/mesures/derniere",
+    response_model=MesureRead,
+    summary="Dernières mesures d'un client (Tous rôles)",
+    description="Renvoie la prise de mesures la plus récente du client ; 404 si aucune mesure n'a été prise.",
+)
+def get_client_latest_measures(
+    id: int,
+    db: Session = Depends(get_db),
+) -> Mesure:
+    """Dernières mesures enregistrées pour le client."""
+    return get_derniere_mesure_client(db=db, client_id=id)

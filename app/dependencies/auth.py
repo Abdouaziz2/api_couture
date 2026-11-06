@@ -72,6 +72,7 @@ def require_roles(*allowed_roles: RoleUtilisateur) -> Callable[..., Utilisateur]
     return role_checker
 
 
-# Raccourci pour l'administrateur
+# Raccourcis pour les rôles applicatifs
 require_admin = require_roles(RoleUtilisateur.ADMIN)
-
+require_tailleur = require_roles(RoleUtilisateur.TAILLEUR, RoleUtilisateur.ADMIN)
+require_accueil = require_roles(RoleUtilisateur.ACCUEIL, RoleUtilisateur.ADMIN)

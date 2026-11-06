@@ -4,7 +4,13 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine
-from app.routers import auth_router, catalogue_router, client_router, utilisateur_router
+from app.routers import (
+    auth_router,
+    catalogue_router,
+    client_router,
+    mesure_router,
+    utilisateur_router,
+)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -49,3 +55,4 @@ app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(utilisateur_router, prefix=settings.API_V1_PREFIX)
 app.include_router(client_router, prefix=settings.API_V1_PREFIX)
 app.include_router(catalogue_router, prefix=settings.API_V1_PREFIX)
+app.include_router(mesure_router, prefix=settings.API_V1_PREFIX)
