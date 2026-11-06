@@ -17,5 +17,28 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: atelier_couture_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@atelier.sn}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin1234!}
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.seed &&
+             uvicorn main:app --host 0.0.0.0 --port 8000"
+
 volumes:
   postgres_data:

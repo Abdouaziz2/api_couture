@@ -18,6 +18,11 @@ from app.schemas.commande import (
     HistoriqueStatutRead,
     LigneCommandeCreate,
 )
+from app.schemas.livraison import (
+    LivraisonConfirmation,
+    LivraisonPlanification,
+    LivraisonRead,
+)
 from app.schemas.paiement import PaiementCreate, PaiementRead
 from app.services.commande import (
     add_ligne_commande,
@@ -29,6 +34,11 @@ from app.services.commande import (
     get_commande_by_id,
     list_commandes,
     update_commande,
+)
+from app.services.livraison import (
+    confirmer_livraison,
+    get_livraison_commande,
+    planifier_ou_replanifier_livraison,
 )
 from app.services.paiement import (
     create_paiement,
@@ -283,3 +293,57 @@ def get_order_payments(
 ) -> Sequence[Paiement]:
     """Historique des paiements d'une commande."""
     return list_paiements_commande(db=db, commande_id=id)
+
+
+# --- Routes de Livraison associées à la commande (Routes 35, 36 & 37) ---
+
+@router.put(
+    "/{id}/livraison",
+    response_model=LivraisonRead,
+    summary="Planifier ou replanifier la livraison d'une commande (Accueil, Admin)",
+    description="Définit ou met à jour le mode, la date prévue, l'adresse (si domicile - RG18), le livreur et synchronise la date prévue de la commande.",
+    dependencies=[Depends(require_accueil)],
+)
+def plan_order_delivery(
+    id: int,
+    plan_in: LivraisonPlanification,
+    db: Session = Depends(get_db),
+) -> LivraisonRead:
+    """Planification ou replanification d'une livraison."""
+    return planifier_ou_replanifier_livraison(db=db, commande_id=id, data=plan_in)
+
+
+@router.get(
+    "/{id}/livraison",
+    response_model=LivraisonRead,
+    summary="Consulter la livraison d'une commande (Tous rôles)",
+    description="Récupère les détails de la livraison associée à la commande spécifiée (Route 36).",
+)
+def get_order_delivery(
+    id: int,
+    db: Session = Depends(get_db),
+) -> LivraisonRead:
+    """Consulte la livraison planifiée ou effectuée pour une commande."""
+    return get_livraison_commande(db=db, commande_id=id)
+
+
+@router.post(
+    "/{id}/livraison/confirmer",
+    response_model=LivraisonRead,
+    summary="Confirmer la livraison d'une commande (Accueil, Admin)",
+    description="Valide la remise du vêtement (RG20). Commande doit être terminée (RG19) et solde réglé à 100% (sauf dérogation autoriser_solde_impaye=true).",
+    dependencies=[Depends(require_accueil)],
+)
+def confirm_order_delivery(
+    id: int,
+    conf_in: LivraisonConfirmation = LivraisonConfirmation(),
+    current_user: Utilisateur = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LivraisonRead:
+    """Confirmation de livraison / remise client."""
+    return confirmer_livraison(
+        db=db,
+        commande_id=id,
+        data=conf_in,
+        current_user=current_user,
+    )

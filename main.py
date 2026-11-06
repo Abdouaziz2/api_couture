@@ -9,8 +9,10 @@ from app.routers import (
     catalogue_router,
     client_router,
     commande_router,
+    livraison_router,
     mesure_router,
     paiement_router,
+    statistique_router,
     utilisateur_router,
 )
 
@@ -60,3 +62,5 @@ app.include_router(catalogue_router, prefix=settings.API_V1_PREFIX)
 app.include_router(mesure_router, prefix=settings.API_V1_PREFIX)
 app.include_router(commande_router, prefix=settings.API_V1_PREFIX)
 app.include_router(paiement_router, prefix=settings.API_V1_PREFIX)
+app.include_router(livraison_router, prefix=settings.API_V1_PREFIX)
+app.include_router(statistique_router, prefix=settings.API_V1_PREFIX)

@@ -18,6 +18,12 @@ from app.schemas.commande import (
     LigneCommandeCreate,
     LigneCommandeRead,
 )
+from app.schemas.livraison import (
+    LivraisonConfirmation,
+    LivraisonPlanification,
+    LivraisonRead,
+    LivraisonTourneeItem,
+)
 from app.schemas.mesure import (
     MesureBase,
     MesureCreate,
@@ -54,6 +60,10 @@ __all__ = [
     "HistoriqueStatutRead",
     "LigneCommandeCreate",
     "LigneCommandeRead",
+    "LivraisonConfirmation",
+    "LivraisonPlanification",
+    "LivraisonRead",
+    "LivraisonTourneeItem",
     "MesureBase",
     "MesureCreate",
     "MesureRead",
