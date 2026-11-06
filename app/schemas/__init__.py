@@ -7,6 +7,17 @@ from app.schemas.client import (
     ClientResume,
     ClientUpdate,
 )
+from app.schemas.commande import (
+    ChangementStatutRequest,
+    CommandeCreate,
+    CommandeListItem,
+    CommandePagination,
+    CommandeRead,
+    CommandeUpdate,
+    HistoriqueStatutRead,
+    LigneCommandeCreate,
+    LigneCommandeRead,
+)
 from app.schemas.mesure import (
     MesureBase,
     MesureCreate,
@@ -27,12 +38,21 @@ from app.schemas.utilisateur import (
 )
 
 __all__ = [
+    "ChangementStatutRequest",
     "ClientBase",
     "ClientCreate",
     "ClientPagination",
     "ClientRead",
     "ClientResume",
     "ClientUpdate",
+    "CommandeCreate",
+    "CommandeListItem",
+    "CommandePagination",
+    "CommandeRead",
+    "CommandeUpdate",
+    "HistoriqueStatutRead",
+    "LigneCommandeCreate",
+    "LigneCommandeRead",
     "MesureBase",
     "MesureCreate",
     "MesureRead",
