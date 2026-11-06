@@ -8,11 +8,10 @@ from app.core.security import hash_password
 from app.models.utilisateur import RoleUtilisateur, Utilisateur
 from app.schemas.utilisateur import UtilisateurCreate, UtilisateurUpdate
 
-
+# Fonctions de service pour recuperer  un utilisateur par son id ou son email, lister tous les utilisateurs, créer un nouvel utilisateur et mettre à jour un utilisateur existant.
 def get_utilisateur_by_id(db: Session, user_id: int) -> Optional[Utilisateur]:
     """Récupère un utilisateur par son identifiant unique."""
     return db.get(Utilisateur, user_id)
-
 
 def get_utilisateur_by_email(db: Session, email: str) -> Optional[Utilisateur]:
     """Récupère un utilisateur par son adresse e-mail (insensible à la casse)."""

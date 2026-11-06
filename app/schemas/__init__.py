@@ -1,4 +1,12 @@
 from app.schemas.auth import Token, TokenPayload
+from app.schemas.client import (
+    ClientBase,
+    ClientCreate,
+    ClientPagination,
+    ClientRead,
+    ClientResume,
+    ClientUpdate,
+)
 from app.schemas.utilisateur import (
     UtilisateurBase,
     UtilisateurCreate,
@@ -7,6 +15,12 @@ from app.schemas.utilisateur import (
 )
 
 __all__ = [
+    "ClientBase",
+    "ClientCreate",
+    "ClientPagination",
+    "ClientRead",
+    "ClientResume",
+    "ClientUpdate",
     "Token",
     "TokenPayload",
     "UtilisateurBase",
@@ -14,4 +28,3 @@ __all__ = [
     "UtilisateurRead",
     "UtilisateurUpdate",
 ]
-
