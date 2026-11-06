@@ -7,6 +7,12 @@ from app.schemas.client import (
     ClientResume,
     ClientUpdate,
 )
+from app.schemas.type_vetement import (
+    TypeVetementBase,
+    TypeVetementCreate,
+    TypeVetementRead,
+    TypeVetementUpdate,
+)
 from app.schemas.utilisateur import (
     UtilisateurBase,
     UtilisateurCreate,
@@ -23,6 +29,10 @@ __all__ = [
     "ClientUpdate",
     "Token",
     "TokenPayload",
+    "TypeVetementBase",
+    "TypeVetementCreate",
+    "TypeVetementRead",
+    "TypeVetementUpdate",
     "UtilisateurBase",
     "UtilisateurCreate",
     "UtilisateurRead",
