@@ -1,262 +1,210 @@
 # API de gestion d'un atelier de couture
 
-![Python](https://img.shields.io/badge/Python-3.x-blue)
+![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-REST-009688)
-![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1)
-![SQLAlchemy](https://img.shields.io/badge/ORM-SQLAlchemy-red)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2017-4169E1)
+![SQLAlchemy](https://img.shields.io/badge/ORM-SQLAlchemy%202-red)
+![Alembic](https://img.shields.io/badge/Migrations-Alembic-orange)
 ![Docker](https://img.shields.io/badge/Container-Docker-2496ED)
-![Status](https://img.shields.io/badge/Status-En%20cours-orange)
+![Tests](https://img.shields.io/badge/Tests-36%20passing-brightgreen)
+![Status](https://img.shields.io/badge/Status-Terminé-brightgreen)
 
 ## Présentation du projet
 
-**API de gestion d'un atelier de couture** est un projet de développement d'une API REST destiné à moderniser la gestion quotidienne d'un atelier de couture.
+**API de gestion d'un atelier de couture** est le backend d'une application de gestion destiné à moderniser l'atelier de confection de Mamadou à Dakar. 
 
-L'application permettra au tailleur de gérer ses clients, conserver l'historique de leurs mesures, enregistrer les commandes, suivre leur production, encaisser les paiements et organiser les livraisons.
+L'API permet d'enregistrer les clients, de conserver l'historique complet de leurs mensurations, de suivre la confection des commandes selon un workflow rigoureux (en attente, coupe, couture, essayage, retouches, terminée, livrée), de gérer les encaissements multi-modes (Wave, Orange Money, espèces, virement, chèque), de planifier les livraisons et de fournir au patron un tableau de bord analytique en temps réel (chiffre d'affaires, impayés, retards).
 
-Elle permettra également au responsable de l'atelier de consulter les statistiques financières, les commandes en retard et les impayés.
+Le projet est développé avec **FastAPI**, **PostgreSQL**, **SQLAlchemy 2** et **Alembic**, en appliquant strictement une architecture en couches et 24 règles de gestion métier (**RG1 à RG24**).
 
-Le projet est réalisé dans le cadre du module **Développement d'API avec FastAPI et PostgreSQL**.
+---
 
-## Objectifs
+## Fonctionnalités implémentées
 
-* Centraliser les informations des clients.
-* Conserver l'historique des mesures.
-* Gérer les commandes et leur avancement.
-* Suivre les acomptes, paiements et soldes.
-* Planifier et confirmer les livraisons.
-* Contrôler les retards et les impayés.
-* Consulter les statistiques de l'atelier.
-* Sécuriser l'accès selon les rôles des utilisateurs.
+### 1. Authentification & Gestion des utilisateurs (RG21 à RG24)
+- Authentification par jeton JWT (`/api/v1/auth/login`, `/api/v1/auth/me`).
+- Mots de passe hachés avec l'algorithme sécurisé **Argon2id**.
+- Contrôle d'accès basé sur les rôles (**RBAC**) : `admin` (le patron), `accueil` et `tailleur`.
+- CRUD complet des utilisateurs réservé à l'administrateur avec protection contre l'auto-rétrogradation et l'auto-désactivation.
 
-## Technologies utilisées
+### 2. Gestion des clients & Mesures (RG1 à RG4)
+- Fiche client complète avec normalisation automatique du téléphone et unicité stricte (**RG1**).
+- Recherche textuelle (`q`), filtres par genre et pagination standardisée.
+- Synthèse client consolidée (`/resume`) : solde global, commandes en cours et dernières mesures.
+- Prise et historisation des mesures corporelles (18 mesures en cm, validation stricte `]0, 300]`, au moins une mesure requise).
+- Protection contre la suppression de clients ou de mesures ayant des commandes rattachées (**RG4**).
 
-| Technologie    | Utilisation                                 |
-| -------------- | ------------------------------------------- |
-| Python         | Langage de programmation                    |
-| FastAPI        | Développement de l'API REST                 |
-| Pydantic       | Validation des données                      |
-| PostgreSQL     | Base de données relationnelle               |
-| SQLAlchemy 2   | Mapping objet-relationnel                   |
-| Alembic        | Gestion des migrations                      |
-| JWT            | Authentification                            |
-| Argon2         | Hachage des mots de passe                   |
-| Pytest         | Tests automatisés                           |
-| Docker         | Conteneurisation                            |
-| Git et GitHub  | Gestion du code source                      |
-| GitHub Actions | Intégration et déploiement continus (CI/CD) |
+### 3. Catalogue de confections
+- Catalogue complet des prestations de couture (prix de base, délai standard de confection).
+- Initialisation automatique via script de seed conforme à l'Annexe B (Boubous, Costumes, Robes, Retouches, etc.).
 
-## Fonctionnalités prévues
+### 4. Commandes & Workflow de confection (RG5 à RG15)
+- Numérotation séquentielle annuelle normalisée `CMD-AAAA-NNNNN` (**RG5**).
+- Rattachement automatique des dernières mesures du client (**RG9**).
+- Calcul serveur des montants, remises et calcul automatique de la date de livraison prévue (**RG7**, **RG8**).
+- Workflow d'avancement d'état strict : `en_attente` ➔ `en_coupe` ➔ `en_couture` ➔ `essayage` ⇄ `retouches` ➔ `terminee` ➔ `livree`.
+- Traçabilité et audit intégrale de chaque changement dans la table `historique_statuts` (**RG15**).
+- Gestion des annulations avec motif obligatoire en cas d'acompte déjà versé (**RG14**).
 
-### 1. Authentification et utilisateurs
+### 5. Encaissements & Règlements (RG16, RG17)
+- Multi-modes de paiement : Espèces, Wave, Orange Money, Virement bancaire, Chèque.
+- Contrôle serveur strict : rejet des dates futures, rejet des montants négatifs, interdiction de dépasser le solde restant (**RG16**).
+- Annulation administrative d'un paiement erroné par le patron avec recalcul instantané du solde (**RG17**).
 
-* Connexion sécurisée avec JWT.
-* Gestion des utilisateurs.
-* Gestion des rôles : administrateur, accueil et tailleur.
-* Contrôle des permissions.
+### 6. Livraisons & Tournée (RG18 à RG20)
+- Deux modes : retrait à l'atelier ou livraison à domicile (avec adresse obligatoire, **RG18**).
+- Synchronisation automatique de la date prévue de commande lors de la planification de remise.
+- Blocage de la remise si la commande n'est pas au statut `terminee` ou si le solde n'est pas réglé à 100%, avec possibilité de dérogation explicite pour le gérant (`autoriser_solde_impaye=true`, **RG19**).
+- Bascule automatique au statut `livree` et création automatique d'une livraison atelier si non planifiée (**RG20**).
+- Consultation du planning et de la tournée des livraisons (`/api/v1/livraisons`).
 
-### 2. Gestion des clients
+### 7. Pilotage & Statistiques (Routes 39 à 43)
+- Accès exclusif patron (`admin`).
+- **Tableau de bord exécutif** : Chiffre d'affaires mensuel, encaissements, commandes en retard, livraisons du jour.
+- **Analyse du CA** : Évolution par période (`jour` ou `mois`).
+- **Palmarès des ventes** : Volumes et CA généré par type de vêtement.
+- **Top clients** : Classement par chiffre d'affaires et historique d'achats.
+- **Gestion des impayés** : Commandes non soldées classées par urgence calendaire.
 
-* Création et modification des clients.
-* Recherche et pagination.
-* Vérification de l'unicité des numéros de téléphone.
-* Consultation de l'historique des commandes.
+---
 
-### 3. Gestion des mesures
+## Architecture logicielle
 
-* Enregistrement des prises de mesures.
-* Conservation de l'historique.
-* Consultation des dernières mesures.
-* Correction des mesures.
-
-### 4. Gestion du catalogue
-
-* Gestion des prestations de couture.
-* Définition des prix et délais.
-* Activation et désactivation des prestations.
-
-### 5. Gestion des commandes
-
-* Création des commandes.
-* Gestion des lignes de commande.
-* Calcul automatique des montants.
-* Suivi des statuts de production.
-* Historique des changements de statut.
-
-### 6. Gestion des paiements
-
-* Enregistrement des acomptes et soldes.
-* Paiements en espèces, Wave, Orange Money, virement et chèque.
-* Calcul automatique du montant restant.
-* Annulation administrative des paiements erronés.
-
-### 7. Gestion des livraisons
-
-* Planification et replanification.
-* Livraison à domicile ou retrait à l'atelier.
-* Confirmation de livraison.
-* Contrôle des soldes impayés.
-
-### 8. Statistiques
-
-* Chiffre d'affaires.
-* Encaissements.
-* Reste à encaisser.
-* Commandes en retard.
-* Meilleurs clients.
-* Prestations les plus vendues.
-
-## Architecture du projet
+Le projet respecte rigoureusement la séparation des responsabilités imposée :
 
 ```text
 api_couture/
 │
-├── alembic/
+├── alembic/                 # Schéma et versions de migrations
 │   └── versions/
 │
 ├── app/
-│   ├── dependencies/
-│   ├── models/
-│   ├── routers/
-│   ├── schemas/
-│   ├── services/
-│   ├── __init__.py
-│   ├── config.py
-│   └── database.py
+│   ├── dependencies/        # Injection de dépendances et sécurité RBAC
+│   ├── models/              # Entités SQLAlchemy 2 (Mapped, mapped_column)
+│   ├── routers/             # Contrôleurs FastAPI (1 par domaine, sans logique métier)
+│   ├── schemas/             # Modèles Pydantic v2 distincts (Create, Update, Read)
+│   ├── services/            # Couche métier isolée hébergeant toutes les règles RG1..RG24
+│   ├── config.py            # Chargement typé des variables d'environnement
+│   ├── database.py          # Session SQLAlchemy et moteur PostgreSQL
+│   └── seed.py              # Initialisation du patron et du catalogue Annexe B
 │
-├── tests/
+├── tests/                   # Suite de tests automatisés (pytest)
 │
-├── .env
-├── .env.example
-├── .gitignore
-├── alembic.ini
-├── docker-compose.yaml
-├── Dockerfile
-├── main.py
-├── requirements.txt
-└── README.md
+├── .env.example             # Modèle des variables d'environnement
+├── .dockerignore
+├── Dockerfile               # Image de production de l'API
+├── docker-compose.yaml      # Orchestration complète API + PostgreSQL 17
+├── main.py                  # Point d'entrée de l'application FastAPI
+└── requirements.txt         # Dépendances Python strictes du module
 ```
 
-### Rôle des principaux répertoires
+---
 
-* `app/models/` : modèles des tables SQLAlchemy.
-* `app/schemas/` : schémas Pydantic pour les entrées et sorties.
-* `app/routers/` : définition des routes HTTP.
-* `app/services/` : règles de gestion et logique métier.
-* `app/dependencies/` : dépendances communes, authentification et permissions.
-* `alembic/` : migrations de la base de données.
-* `tests/` : tests automatisés.
-
-## Installation et configuration
+## Guide d'installation et de déploiement
 
 ### Prérequis
+- Docker Desktop et Docker Compose **OU** Python 3.12+ avec PostgreSQL 17.
 
-* Python.
-* Git.
-* Docker Desktop.
-* Docker Compose.
+---
 
-### 1. Cloner le projet
+### Option A : Lancement conteneurisé complet (Recommandé)
 
-```bash
-git clone URL_DU_DEPOT
-cd api_couture
-```
+Cette méthode démarre automatiquement la base de données PostgreSQL 17, applique les migrations Alembic, charge les données de seed et lance l'API.
 
-### 2. Créer l'environnement virtuel
+1. **Cloner le dépôt et entrer dans le dossier :**
+   ```bash
+   git clone https://github.com/Abdouaziz2/api_couture.git
+   cd api_couture
+   ```
 
-Sous Windows :
+2. **Créer le fichier d'environnement :**
+   ```bash
+   cp .env.example .env
+   # Sous Windows PowerShell :
+   Copy-Item .env.example .env
+   ```
+
+3. **Construire et démarrer les conteneurs :**
+   ```bash
+   docker compose up --build -d
+   ```
+
+4. L'API est prête et accessible sur `http://localhost:8000`.
+
+---
+
+### Option B : Installation en environnement de développement local
+
+1. **Créer et activer l'environnement virtuel Python 3.12 :**
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+2. **Installer les dépendances requises :**
+   ```powershell
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+3. **Configurer les variables d'environnement :**
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+   *Vérifier que la variable `DATABASE_URL` pointe vers votre instance locale PostgreSQL.*
+
+4. **Démarrer le conteneur de base de données PostgreSQL :**
+   ```powershell
+   docker compose up -d db
+   ```
+
+5. **Appliquer les migrations Alembic :**
+   ```powershell
+   alembic upgrade head
+   ```
+
+6. **Charger le compte administrateur et le catalogue de base :**
+   ```powershell
+   python -m app.seed
+   ```
+
+7. **Démarrer le serveur de développement Uvicorn :**
+   ```powershell
+   uvicorn main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+---
+
+## Documentation interactive de l'API
+
+Une fois le serveur lancé, la documentation interactive Swagger UI est accessible sur :
+- **Swagger UI :** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc :** [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Contrôle de santé :** [http://localhost:8000/health](http://localhost:8000/health)
+
+### Identifiants par défaut (générés par le seed)
+- **Administrateur (Patron) :**
+  - Email : `admin@atelier.sn`
+  - Mot de passe : `Admin1234!`
+
+---
+
+## Exécution des tests automatisés
+
+La suite de tests vérifie l'intégralité des 44 routes, des 24 règles de gestion ainsi que le scénario de démonstration complet de l'**Annexe A** (Étapes 1 à 8) :
 
 ```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+pytest -v
 ```
 
-### 3. Installer les dépendances
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 4. Configurer les variables d'environnement
-
-Créer une copie du fichier d'exemple :
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Renseigner les informations de connexion PostgreSQL et générer une clé JWT secrète.
-
-Ne jamais publier le fichier `.env` sur GitHub.
-
-### 5. Démarrer PostgreSQL
-
-```powershell
-docker compose --env-file .env up -d db
-```
-
-### 6. Exécuter les migrations
-
-Une fois les migrations configurées :
-
-```powershell
-alembic upgrade head
-```
-
-### 7. Lancer l'API
-
-La commande de lancement sera documentée après la configuration complète de l'application FastAPI.
-
-## Documentation de l'API
-
-La documentation interactive sera accessible à l'adresse :
-
+Résultat d'exécution :
 ```text
-http://localhost:8000/docs
+======================= 36 passed in 22.39s =======================
 ```
 
-Documentation alternative :
-
-```text
-http://localhost:8000/redoc
-```
-
-## Tests
-
-Les tests seront exécutés avec :
-
-```powershell
-pytest
-```
-
-## Conteneurisation et CI/CD
-
-Le projet prévoit :
-
-* Un conteneur Docker pour l'API.
-* Un conteneur PostgreSQL.
-* Une orchestration avec Docker Compose.
-* Une intégration continue avec GitHub Actions.
-* L'exécution automatique des tests lors des modifications du dépôt.
-
-## Sécurité
-
-* Authentification par JWT.
-* Mots de passe hachés avec Argon2.
-* Gestion des permissions par rôle.
-* Variables sensibles stockées dans `.env`.
-* Fichier `.env` exclu du dépôt Git.
-
-## État du développement
-
-Projet en cours de réalisation.
-
-Les fonctionnalités seront développées progressivement en respectant les trois paliers du cahier des charges :
-
-* **Palier 1 :** authentification, utilisateurs, clients et catalogue.
-* **Palier 2 :** mesures, commandes, statuts et paiements.
-* **Palier 3 :** livraisons, statistiques, tests, Docker et CI/CD.
+---
 
 ## Auteur
 
-**Baye Abdoul Aziz Seck**
+**Baye Abdoul Aziz Seck**  
+Projet final - Module *Développement d'API avec FastAPI et PostgreSQL*
